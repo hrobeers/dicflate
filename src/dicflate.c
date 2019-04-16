@@ -13,8 +13,10 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
 #include "zlib.h"
 
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
@@ -172,6 +174,11 @@ void zerr(int ret)
     }
 }
 
+int printUsage(int argc, char **argv) {
+    fprintf(stderr, "Usage: %s [-x] < source > dest\n", argv[0]);
+    return EXIT_FAILURE;
+}
+
 /* compress or decompress from stdin to stdout */
 int main(int argc, char **argv)
 {
@@ -181,25 +188,33 @@ int main(int argc, char **argv)
     SET_BINARY_MODE(stdin);
     SET_BINARY_MODE(stdout);
 
-    /* do compression if no arguments */
-    if (argc == 1) {
+    /* parse commandline options */
+    int opt;
+    enum { DEFLATE_MODE, INFLATE_MODE } mode = DEFLATE_MODE;
+
+    while ((opt = getopt(argc, argv, "x")) != -1) {
+        switch (opt) {
+        case 'x': mode = INFLATE_MODE; break;
+        default:
+            return printUsage(argc, argv);
+        }
+    }
+
+    switch (mode) {
+    case DEFLATE_MODE:
+        /* do compression */
         ret = def(stdin, stdout, Z_DEFAULT_COMPRESSION);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
-    }
 
-    /* do decompression if -d specified */
-    else if (argc == 2 && strcmp(argv[1], "-d") == 0) {
+    case INFLATE_MODE:
+        /* do decompression */
         ret = inf(stdin, stdout);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
     }
 
-    /* otherwise, report usage */
-    else {
-        fputs("zpipe usage: zpipe [-d] < source > dest\n", stderr);
-        return 1;
-    }
+    return printUsage(argc,argv);
 }
