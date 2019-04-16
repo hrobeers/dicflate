@@ -1,16 +1,33 @@
-/* zpipe.c: example of proper use of zlib's inflate() and deflate()
-   Not copyrighted -- provided to the public domain
-   Version 1.4  11 December 2005  Mark Adler */
+/*
+dicflate.c: DEFLATE tool using preset dictionaries
 
-/* Version history:
-   1.0  30 Oct 2004  First version
-   1.1   8 Nov 2004  Add void casting for unused return values
-                     Use switch statement for inflate() return values
-   1.2   9 Nov 2004  Add assertions to document zlib guarantees
-   1.3   6 Apr 2005  Remove incorrect assertion in inf()
-   1.4  11 Dec 2005  Add hack to avoid MSDOS end-of-line conversions
-                     Avoid some compiler warnings for input and output buffers
- */
+Based on Mark Adler's zpipe.c:
+Example of proper use of zlib's inflate() and deflate()
+Version 1.4  11 December 2005  Mark Adler
+
+
+The MIT License
+
+Copyright (c) hrobeers, 2019
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -152,7 +169,7 @@ int inf(FILE *source, FILE *dest)
 /* report a zlib or i/o error */
 void zerr(int ret)
 {
-    fputs("zpipe: ", stderr);
+    fputs("dicflate: ", stderr);
     switch (ret) {
     case Z_ERRNO:
         if (ferror(stdin))
