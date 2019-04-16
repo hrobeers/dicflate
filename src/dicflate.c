@@ -175,8 +175,15 @@ void zerr(int ret)
 }
 
 int printUsage(int argc, char **argv) {
-    fprintf(stderr, "Usage: %s [-x] < source > dest\n", argv[0]);
+    fprintf(stderr, "Usage: %s [-x] [-l level] < source > dest\n", argv[0]);
     return EXIT_FAILURE;
+}
+
+long int parseOrDefault(char* str, long int def) {
+  char* endptr;
+  long int parsed = strtol(str, &endptr, 10);
+  if (endptr==str) return def;
+  return parsed;
 }
 
 /* compress or decompress from stdin to stdout */
@@ -191,10 +198,12 @@ int main(int argc, char **argv)
     /* parse commandline options */
     int opt;
     enum { DEFLATE_MODE, INFLATE_MODE } mode = DEFLATE_MODE;
+    int level = Z_DEFAULT_COMPRESSION;
 
-    while ((opt = getopt(argc, argv, "x")) != -1) {
+    while ((opt = getopt(argc, argv, "xl:")) != -1) {
         switch (opt) {
         case 'x': mode = INFLATE_MODE; break;
+        case 'l': level = parseOrDefault(optarg, level); break;
         default:
             return printUsage(argc, argv);
         }
@@ -203,7 +212,7 @@ int main(int argc, char **argv)
     switch (mode) {
     case DEFLATE_MODE:
         /* do compression */
-        ret = def(stdin, stdout, Z_DEFAULT_COMPRESSION);
+        ret = def(stdin, stdout, level);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
