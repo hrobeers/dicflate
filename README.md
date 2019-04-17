@@ -7,13 +7,12 @@ DEFLATE tool using preset dictionaries
 Quickstart
 ----------
 ```bash
-make check
+dicflate -d my.dict < uncompressed > compressed.data
+dicflate -x -d my.dict < compressed.data > uncompressed
 ```
 
 #### Dependencies
 - C compiler (gcc)
-- Bash
-- [Bats: Bash Automated Testing System](https://github.com/sstephenson/bats) (for tests)
 
 
 Rationale
