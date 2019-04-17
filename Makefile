@@ -6,9 +6,9 @@ CXXFLAGS= -Wall -O3
 default: all
 all: dicflate
 
-#test: check
-#check: all
-#	./test/all.sh
+test: check
+check: all
+	./test/all.sh
 
 dicflate:
 	$(CC) $(CCFLAGS) src/dicflate.c -lz -o dicflate

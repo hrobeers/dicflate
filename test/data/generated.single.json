@@ -1,0 +1,48 @@
+
+Generated using: https://www.json-generator.com/
+
+{
+    "_id": "5cb782a77b2ab8beef1305ff",
+    "index": 0,
+    "guid": "dab9be1e-8419-4ceb-bbd7-92aafe310281",
+    "isActive": true,
+    "balance": "$3,732.66",
+    "picture": "http://placehold.it/32x32",
+    "age": 36,
+    "eyeColor": "blue",
+    "name": "Lowery Sweeney",
+    "gender": "male",
+    "company": "CORPULSE",
+    "email": "lowerysweeney@corpulse.com",
+    "phone": "+1 (996) 439-3012",
+    "address": "904 Jay Street, Rodanthe, Connecticut, 8390",
+    "about": "Laborum officia nostrud culpa veniam esse nostrud esse. Veniam qui ad deserunt et ullamco eiusmod magna commodo aliquip quis. Lorem voluptate exercitation tempor pariatur anim enim. Occaecat sunt ullamco ea consectetur consequat voluptate enim consequat sit elit. Adipisicing pariatur tempor ut in fugiat nulla.\r\n",
+    "registered": "2018-05-23T09:29:12 -02:00",
+    "latitude": -42.870088,
+    "longitude": 148.348961,
+    "tags": [
+      "occaecat",
+      "id",
+      "commodo",
+      "ut",
+      "enim",
+      "Lorem",
+      "mollit"
+    ],
+    "friends": [
+      {
+        "id": 0,
+        "name": "Esperanza Lamb"
+      },
+      {
+        "id": 1,
+        "name": "Hood Puckett"
+      },
+      {
+        "id": 2,
+        "name": "Tricia Henry"
+      }
+    ],
+    "greeting": "Hello, Lowery Sweeney! You have 1 unread messages.",
+    "favoriteFruit": "strawberry"
+  }
