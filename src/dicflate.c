@@ -45,6 +45,7 @@ THE SOFTWARE.
 #endif
 
 #define CHUNK 16384
+#define MAX_DICT_SIZE 1024*1024
 
 /* Compress from file source to file dest until EOF on source.
    def() returns Z_OK on success, Z_MEM_ERROR if memory could not be
@@ -52,7 +53,7 @@ THE SOFTWARE.
    level is supplied, Z_VERSION_ERROR if the version of zlib.h and the
    version of the library linked do not match, or Z_ERRNO if there is
    an error reading or writing the files. */
-int def(FILE *source, FILE *dest, int level)
+int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size)
 {
     int ret, flush;
     unsigned have;
@@ -67,6 +68,13 @@ int def(FILE *source, FILE *dest, int level)
     ret = deflateInit(&strm, level);
     if (ret != Z_OK)
         return ret;
+
+    /* set Dictionary if provided */
+    if (dict && dict_size>0) {
+        ret = deflateSetDictionary(&strm, dict, dict_size);
+        if (ret != Z_OK) return ret;
+        fprintf(stderr, "Dict adler: %i\n", strm.adler);
+    }
 
     /* compress until end of file */
     do {
@@ -145,7 +153,6 @@ int inf(FILE *source, FILE *dest)
             assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
             switch (ret) {
             case Z_NEED_DICT:
-                ret = Z_DATA_ERROR;     /* and fall through */
             case Z_DATA_ERROR:
             case Z_MEM_ERROR:
                 (void)inflateEnd(&strm);
@@ -183,6 +190,9 @@ void zerr(int ret)
     case Z_DATA_ERROR:
         fputs("invalid or incomplete deflate data\n", stderr);
         break;
+    case Z_NEED_DICT:
+        fputs("missing dictionary\n", stderr);
+        break;
     case Z_MEM_ERROR:
         fputs("out of memory\n", stderr);
         break;
@@ -217,10 +227,20 @@ int main(int argc, char **argv)
     enum { DEFLATE_MODE, INFLATE_MODE } mode = DEFLATE_MODE;
     int level = Z_DEFAULT_COMPRESSION;
 
-    while ((opt = getopt(argc, argv, "xl:")) != -1) {
+    FILE* f;
+    size_t dict_size = 0;
+    char dict[MAX_DICT_SIZE];
+
+    while ((opt = getopt(argc, argv, "xl:d:")) != -1) {
         switch (opt) {
         case 'x': mode = INFLATE_MODE; break;
         case 'l': level = parseOrDefault(optarg, level); break;
+        case 'd':
+            f = fopen(optarg, "rb");
+            dict_size = fread(dict, 1, MAX_DICT_SIZE, f);
+            fclose(f);
+            fprintf(stderr, "Dict size: %i\n", dict_size);
+            break;
         default:
             return printUsage(argc, argv);
         }
@@ -229,7 +249,7 @@ int main(int argc, char **argv)
     switch (mode) {
     case DEFLATE_MODE:
         /* do compression */
-        ret = def(stdin, stdout, level);
+        ret = def(stdin, stdout, level, dict, dict_size);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
