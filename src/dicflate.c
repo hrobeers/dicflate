@@ -116,7 +116,7 @@ int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size)
    invalid or incomplete, Z_VERSION_ERROR if the version of zlib.h and
    the version of the library linked do not match, or Z_ERRNO if there
    is an error reading or writing the files. */
-int inf(FILE *source, FILE *dest)
+int inf(FILE *source, FILE *dest, char* dict, size_t dict_size)
 {
     int ret;
     unsigned have;
@@ -153,6 +153,12 @@ int inf(FILE *source, FILE *dest)
             assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
             switch (ret) {
             case Z_NEED_DICT:
+                ret = inflateSetDictionary(&strm, dict, dict_size);
+                if (ret != Z_OK) return ret;
+                fprintf(stderr, "Dict adler: %i\n", strm.adler);
+                ret = inflate(&strm, Z_NO_FLUSH);
+                if (ret != Z_OK && ret != Z_STREAM_END) return ret;
+                break;
             case Z_DATA_ERROR:
             case Z_MEM_ERROR:
                 (void)inflateEnd(&strm);
@@ -256,7 +262,7 @@ int main(int argc, char **argv)
 
     case INFLATE_MODE:
         /* do decompression */
-        ret = inf(stdin, stdout);
+        ret = inf(stdin, stdout, dict, dict_size);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
