@@ -45,7 +45,7 @@ THE SOFTWARE.
 #endif
 
 #define CHUNK 16384
-#define MAX_DICT_SIZE 1024*1024
+#define MAX_DICT_SIZE 32768
 
 /* Compress from file source to file dest until EOF on source.
    def() returns Z_OK on success, Z_MEM_ERROR if memory could not be
