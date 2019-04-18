@@ -4,7 +4,7 @@ CFLAGS= -Wall -O3
 CXXFLAGS= -Wall -O3
 
 default: all
-all: dicflate
+all: clean dicflate
 
 test: check
 check: all
