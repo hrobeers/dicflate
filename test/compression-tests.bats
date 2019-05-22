@@ -3,6 +3,13 @@
 BD=${BATS_TEST_DIRNAME}/..
 DD=${BATS_TEST_DIRNAME}/data
 
+@test "deflate: regression test" {
+    result=$(echo "hello world" | ./dicflate  | sha1sum | awk '{print $1}')
+
+    # Verify
+    [ $result == "ff049c626904064d641feca0e9936e5b211807c6" ]
+}
+
 @test "deflate: no dict" {
     size=$(cat ${DD}/generated.json | wc -c)
     compressed_size=$(cat ${DD}/generated.json \
