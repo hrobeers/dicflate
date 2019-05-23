@@ -3,14 +3,14 @@
 BD=${BATS_TEST_DIRNAME}/..
 DD=${BATS_TEST_DIRNAME}/data
 
-@test "deflate: regression test" {
+@test "zlib deflate: regression test" {
     result=$(echo "hello world" | ./dicflate  | sha1sum | awk '{print $1}')
 
     # Verify
     [ $result == "ff049c626904064d641feca0e9936e5b211807c6" ]
 }
 
-@test "deflate: no dict" {
+@test "zlib deflate: no dict" {
     size=$(cat ${DD}/generated.json | wc -c)
     compressed_size=$(cat ${DD}/generated.json \
                       | ${BD}/dicflate \
@@ -25,7 +25,7 @@ DD=${BATS_TEST_DIRNAME}/data
     [ $result_size == $size ]
 }
 
-@test "deflate: with dict" {
+@test "zlib deflate: with dict" {
     size=$(cat ${DD}/generated.json | wc -c)
     compressed_size=$(cat ${DD}/generated.json \
                       | ${BD}/dicflate -d ${DD}/generated.single.json \
@@ -40,7 +40,7 @@ DD=${BATS_TEST_DIRNAME}/data
     [ $result_size == $size ]
 }
 
-@test "deflate: comparison dict/no-dict" {
+@test "zlib deflate: comparison dict/no-dict" {
     size=$(cat ${DD}/generated.single.json | wc -c)
     compressed_dict=$(cat ${DD}/generated.single.json \
                       | ${BD}/dicflate -d ${DD}/generated.json \

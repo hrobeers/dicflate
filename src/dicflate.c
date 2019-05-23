@@ -46,6 +46,7 @@ THE SOFTWARE.
 
 #define CHUNK 16384
 #define MAX_DICT_SIZE 32768
+#define MEM_LEVEL 8 /* default 8, maximum 9 (better compression) */
 
 /* Compress from file source to file dest until EOF on source.
    def() returns Z_OK on success, Z_MEM_ERROR if memory could not be
@@ -53,7 +54,7 @@ THE SOFTWARE.
    level is supplied, Z_VERSION_ERROR if the version of zlib.h and the
    version of the library linked do not match, or Z_ERRNO if there is
    an error reading or writing the files. */
-int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size)
+int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size, int window_bits)
 {
     int ret, flush;
     unsigned have;
@@ -65,7 +66,7 @@ int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size)
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
     strm.opaque = Z_NULL;
-    ret = deflateInit(&strm, level);
+    ret = deflateInit2(&strm, level, Z_DEFLATED, window_bits, MEM_LEVEL, Z_DEFAULT_STRATEGY);
     if (ret != Z_OK)
         return ret;
 
@@ -116,7 +117,7 @@ int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size)
    invalid or incomplete, Z_VERSION_ERROR if the version of zlib.h and
    the version of the library linked do not match, or Z_ERRNO if there
    is an error reading or writing the files. */
-int inf(FILE *source, FILE *dest, char* dict, size_t dict_size)
+int inf(FILE *source, FILE *dest, char* dict, size_t dict_size, int window_bits)
 {
     int ret;
     unsigned have;
@@ -130,9 +131,11 @@ int inf(FILE *source, FILE *dest, char* dict, size_t dict_size)
     strm.opaque = Z_NULL;
     strm.avail_in = 0;
     strm.next_in = Z_NULL;
-    ret = inflateInit(&strm);
+    ret = inflateInit2(&strm, window_bits);
     if (ret != Z_OK)
         return ret;
+    if (window_bits<0 && dict_size>0)
+      ret = inflateSetDictionary(&strm, dict, dict_size);
 
     /* decompress until deflate stream ends or end of file */
     do {
@@ -232,15 +235,17 @@ int main(int argc, char **argv)
     int opt;
     enum { DEFLATE_MODE, INFLATE_MODE } mode = DEFLATE_MODE;
     int level = Z_DEFAULT_COMPRESSION;
+    int window_bits = 15;
 
     FILE* f;
     size_t dict_size = 0;
     char dict[MAX_DICT_SIZE];
 
-    while ((opt = getopt(argc, argv, "xl:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "rxl:d:")) != -1) {
         switch (opt) {
         case 'x': mode = INFLATE_MODE; break;
         case 'l': level = parseOrDefault(optarg, level); break;
+        case 'r': window_bits = -15; break;
         case 'd':
             f = fopen(optarg, "rb");
             dict_size = fread(dict, 1, MAX_DICT_SIZE, f);
@@ -255,14 +260,14 @@ int main(int argc, char **argv)
     switch (mode) {
     case DEFLATE_MODE:
         /* do compression */
-        ret = def(stdin, stdout, level, dict, dict_size);
+        ret = def(stdin, stdout, level, dict, dict_size, window_bits);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
 
     case INFLATE_MODE:
         /* do decompression */
-        ret = inf(stdin, stdout, dict, dict_size);
+        ret = inf(stdin, stdout, dict, dict_size, window_bits);
         if (ret != Z_OK)
             zerr(ret);
         return ret;
