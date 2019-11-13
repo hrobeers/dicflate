@@ -211,7 +211,7 @@ void zerr(int ret)
 }
 
 int printUsage(int argc, char **argv) {
-    fprintf(stderr, "Usage: %s [-x] [-l level] < source > dest\n", argv[0]);
+    fprintf(stderr, "Usage: %s [-x] [-d dictionary] [-l level] < source > dest\n", argv[0]);
     return EXIT_FAILURE;
 }
 
