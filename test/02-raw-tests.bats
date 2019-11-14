@@ -4,7 +4,7 @@ BD=${BATS_TEST_DIRNAME}/..
 DD=${BATS_TEST_DIRNAME}/data
 
 @test "raw deflate: regression test" {
-    result=$(echo "hello world" | ./dicflate -r  | sha1sum | awk '{print $1}')
+    result=$(echo "hello world" | ${BD}/dicflate -r  | sha1sum | awk '{print $1}')
 
     # Verify
     [ $result == "0b6d6a956774d5559c0d5f3b0625bb295c281229" ]

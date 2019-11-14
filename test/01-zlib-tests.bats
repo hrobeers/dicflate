@@ -4,7 +4,7 @@ BD=${BATS_TEST_DIRNAME}/..
 DD=${BATS_TEST_DIRNAME}/data
 
 @test "zlib deflate: regression test" {
-    result=$(echo "hello world" | ./dicflate  | sha1sum | awk '{print $1}')
+    result=$(echo "hello world" | ${BD}/dicflate  | sha1sum | awk '{print $1}')
 
     # Verify
     [ $result == "ff049c626904064d641feca0e9936e5b211807c6" ]
