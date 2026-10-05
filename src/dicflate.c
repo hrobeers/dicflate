@@ -211,7 +211,18 @@ void zerr(int ret)
 }
 
 int printUsage(int argc, char **argv) {
-    fprintf(stderr, "Usage: %s [-x] [-r] [-d dictionary] [-l level] < source > dest\n", argv[0]);
+    fprintf(stderr,
+        "Usage: %s [-x] [-r] [-l level] [-d dict] < source > dest\n"
+        "\n"
+        "Compress (deflate) stdin to stdout, or extract (inflate) with -x.\n"
+        "\n"
+        "Options:\n"
+        "  -x         extract (decompress) instead of compress\n"
+        "  -r         raw DEFLATE stream, without zlib header and checksum\n"
+        "  -l level   compression level, 0 (none) to 9 (best); default 6\n"
+        "  -d dict    preset dictionary, read from file dict (max 32 KiB);\n"
+        "             required for extraction if used during compression\n",
+        argv[0]);
     return EXIT_FAILURE;
 }
 
