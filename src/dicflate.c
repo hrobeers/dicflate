@@ -72,9 +72,9 @@ int def(FILE *source, FILE *dest, int level, char* dict, size_t dict_size, int w
 
     /* set Dictionary if provided */
     if (dict && dict_size>0) {
-        ret = deflateSetDictionary(&strm, dict, dict_size);
+        ret = deflateSetDictionary(&strm, (const Bytef*)dict, dict_size);
         if (ret != Z_OK) return ret;
-        fprintf(stderr, "Dict adler: %i\n", strm.adler);
+        fprintf(stderr, "Dict adler: %lu\n", strm.adler);
     }
 
     /* compress until end of file */
@@ -135,7 +135,7 @@ int inf(FILE *source, FILE *dest, char* dict, size_t dict_size, int window_bits)
     if (ret != Z_OK)
         return ret;
     if (window_bits<0 && dict_size>0)
-      ret = inflateSetDictionary(&strm, dict, dict_size);
+      ret = inflateSetDictionary(&strm, (const Bytef*)dict, dict_size);
 
     /* decompress until deflate stream ends or end of file */
     do {
@@ -156,9 +156,9 @@ int inf(FILE *source, FILE *dest, char* dict, size_t dict_size, int window_bits)
             assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
             switch (ret) {
             case Z_NEED_DICT:
-                ret = inflateSetDictionary(&strm, dict, dict_size);
+                ret = inflateSetDictionary(&strm, (const Bytef*)dict, dict_size);
                 if (ret != Z_OK) return ret;
-                fprintf(stderr, "Dict adler: %i\n", strm.adler);
+                fprintf(stderr, "Dict adler: %lu\n", strm.adler);
                 ret = inflate(&strm, Z_NO_FLUSH);
                 if (ret != Z_OK && ret != Z_STREAM_END) return ret;
                 break;
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
             f = fopen(optarg, "rb");
             dict_size = fread(dict, 1, MAX_DICT_SIZE, f);
             fclose(f);
-            fprintf(stderr, "Dict size: %i\n", dict_size);
+            fprintf(stderr, "Dict size: %zu\n", dict_size);
             break;
         default:
             return printUsage(argc, argv);

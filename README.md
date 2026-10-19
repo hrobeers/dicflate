@@ -6,7 +6,8 @@ DEFLATE tool with support for preset dictionaries using zlib
 dicflate is a stream filter: it reads from stdin and writes to stdout, so it
 can be used in pipelines. It can produce both standard zlib-wrapped and raw
 DEFLATE streams, with optional preset dictionaries and a configurable
-compression level.
+compression level. Its companion tool [dicstd](#dicstd) provides the same
+functionality using zstd.
 
 Usage
 -----
@@ -116,6 +117,52 @@ dicflate -r -d skeleton.json < record.json > record.dfl
 The dictionary can also simply be one or more representative documents,
 as in the [tests](test/).
 
+dicstd
+------
+
+`dicstd` is a companion tool that offers the same functionality using zstd:
+
+```
+Usage: dicstd [-x] [-r] [-l level] [-d dict] < source > dest
+
+Compress (zstd) stdin to stdout, or extract (decompress) with -x.
+
+Options:
+  -x         extract (decompress) instead of compress
+  -r         raw zstd frame, without the 4-byte magic number
+  -l level   compression level, 1 (fastest) to 22 (best); default 3
+  -d dict    preset dictionary, read from file dict; when larger than
+             16 MiB, only the last 16 MiB is used; required for
+             extraction if used during compression
+```
+
+```bash
+# Compress
+dicstd -d my.dict < uncompressed > compressed.zst
+
+# Extract
+dicstd -x -d my.dict < compressed.zst > uncompressed
+```
+
+### Growing the dictionary
+
+Because zstd matches are relative offsets, only the tail of the dictionary
+matters. Together with the raw (`-r`) frame format, which carries neither a
+magic number nor a dictionary id, this allows the dictionary to grow over
+time by prepending new content, while all previously compressed files remain
+decodable:
+
+```bash
+# Dictionary v2: prepend new samples to the old dictionary
+cat new-samples.json dict-v1.json > dict-v2.json
+
+# Old files keep decoding with the grown dictionary
+dicstd -rx -d dict-v2.json < old-record.zst > old-record.json
+```
+
+The same applies to dicflate's raw mode, with the dictionary bounded to
+DEFLATE's 32 KiB window.
+
 Interoperability
 ----------------
 Streams produced by dicflate are standard zlib/DEFLATE and can be
@@ -132,27 +179,46 @@ data = d.decompress(open("record.dfl", "rb").read())
 and likewise for compression via `zlib.compressobj(9, zlib.DEFLATED, -15, 8,
 zlib.Z_DEFAULT_STRATEGY, zdict=dict_)`.
 
+Streams produced by dicstd are standard zstd frames as well, e.g.
+`zstd -d < record.zst > record.json`. With a dictionary in Python
+([zstandard](https://python-zstandard.readthedocs.io/)):
+
+```python
+import zstandard
+dict_ = zstandard.ZstdCompressionDict(open("schema.json", "rb").read())
+dctx = zstandard.ZstdDecompressor(dict_data=dict_)
+with open("record.zst", "rb") as f:
+    data = dctx.stream_reader(f).read()
+```
+
+Raw (`-r`) frames are magicless and require the consumer to expect
+that format.
+
 WebAssembly
 -----------
 A WebAssembly build is available in [wasm/](wasm/). Build it with
-[Emscripten](https://emscripten.org/) and its zlib port:
+[Emscripten](https://emscripten.org/):
 
 ```bash
 cd wasm && make
 ```
 
-This produces `dicflate.js` and `dicflate.wasm` for use in Node.js and
-browser environments.
+This produces `dicflate.js` and `dicflate.wasm`, using Emscripten's zlib
+port, and `dicstd.js` and `dicstd.wasm`, using the vendored zstd from
+[vendor/](vendor/). The `dicstd` build uses NODERAWFS, so under Node.js it
+fully supports stdin/stdout pipelines and `-d` dictionary files; embedding
+it in a browser requires a custom build without `-sNODERAWFS`.
 
 #### Dependencies
-- C compiler (gcc) and zlib
+- C compiler (gcc), zlib (for dicflate), and zstd (vendored in
+  [vendor/](vendor/), for dicstd)
 - [Emscripten](https://emscripten.org/) (only for the WebAssembly build)
 - [Bats: Bash Automated Testing System](https://github.com/sstephenson/bats) (for tests)
 
 Build and test
 --------------
 ```bash
-make        # build ./dicflate
+make        # build ./dicflate and ./dicstd
 make check  # build and run the test suite
 ```
 
@@ -164,3 +230,5 @@ Unfortunately this functionality is not exposed by any of the mainstream compres
 dicflate aims to fill this void.
 
 Preset dictionaries can be usefull to reduce the size of self-describing serialization formats (e.g. JSON), without the need to shorten property names or other verbosities.
+
+`dicstd` applies the same idea to zstd.

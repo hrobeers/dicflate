@@ -1,3 +1,6 @@
 dicflate
+dicstd
 *~
 *.expected
+wasm/*.js
+wasm/*.wasm
