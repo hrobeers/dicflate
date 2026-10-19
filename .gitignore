@@ -1,5 +1,7 @@
 dicflate
 dicstd
+diclz4
+bench/bench
 *~
 *.expected
 wasm/*.js
