@@ -4,13 +4,13 @@ CFLAGS= -Wall -O3
 CXXFLAGS= -Wall -O3
 
 default: all
-all: clean dicflate dicstd diclz4
+all: dicflate dicstd diclz4
 
 test: check
 check: all
 	./test/all.sh
 
-dicflate:
+dicflate: src/dicflate.c
 	$(CC) $(CFLAGS) src/dicflate.c -lz -o dicflate
 
 dicstd: src/dicstd.c vendor/zstd.c vendor/zstd.h vendor/zstd_errors.h

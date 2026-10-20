@@ -134,3 +134,51 @@ min_level() {
 }
 
 min_level
+
+# ==== image-payload messages: highly compressed (incompressible) data
+# inside a small JSON message, like base64 PNG images.
+# The payload is deflate-compressed varied text (repo sources), i.e.
+# high-entropy bytes like a PNG IDAT stream, embedded as base64. ====
+cat $BD/README.md $BD/src/*.c $BD/test/*.bats $BD/vendor/*.h 2>/dev/null \
+    | $BD/dicflate -l 9 > $T/img-blob 2>/dev/null
+head -c 8000 $T/img-blob > $T/img-blob-small
+img_msg() {  # img_msg <blob-file> <message-file>
+    local b64=$(base64 -w0 "$1")
+    printf '{"id":"a1b2c3d4","ts":"2026-10-19T00:00:00Z","type":"report","schema":"v2","device":{"name":"sensor-7","fw":"1.2.3","location":{"lat":"51.92","lon":"4.47"}},"payload":{"encoding":"base64","mediaType":"image/png","data":"%s"},"meta":{"priority":"high","ttl":"3600","seq":"42"}}\n' "$b64" > "$2"
+}
+img_msg $T/img-blob-small $T/img-small.json
+img_msg $T/img-blob $T/img.json
+$BD/json-skeleton.sh < $T/img.json > $T/img.dict 2>/dev/null
+
+echo
+echo "=== image payload: JSON with base64 compressed data, raw + skeleton dict ==="
+echo "    min levels (zlib 1 / zstd 1 / lz4 0) and defaults, min of N, ms ==="
+for f in img-small.json img.json; do
+  isz=$(wc -c < $T/$f)
+  f1t=$(minof 150 $T/$f $BD/dicflate -r -l 1 -d $T/img.dict)
+  f1s=$($BD/dicflate -r -l 1 -d $T/img.dict < $T/$f 2>/dev/null | wc -c)
+  fdt=$(minof 150 $T/$f $BD/dicflate -r -d $T/img.dict)
+  fds=$($BD/dicflate -r -d $T/img.dict < $T/$f 2>/dev/null | wc -c)
+  z1t=$(minof 150 $T/$f $BD/dicstd -r -l 1 -d $T/img.dict)
+  z1s=$($BD/dicstd -r -l 1 -d $T/img.dict < $T/$f 2>/dev/null | wc -c)
+  zdt=$(minof 150 $T/$f $BD/dicstd -r -d $T/img.dict)
+  zds=$($BD/dicstd -r -d $T/img.dict < $T/$f 2>/dev/null | wc -c)
+  l1t=$(minof 150 $T/$f $BD/diclz4 -r -l 0 -d $T/img.dict)
+  l1s=$($BD/diclz4 -r -l 0 -d $T/img.dict < $T/$f 2>/dev/null | wc -c)
+  printf '%-14s (%s bytes input)\n' "$f" "$isz"
+  printf '  dicflate: min %8s B %7s ms | default %8s B %7s ms\n' "$f1s" "$f1t" "$fds" "$fdt"
+  printf '  dicstd:   min %8s B %7s ms | default %8s B %7s ms\n' "$z1s" "$z1t" "$zds" "$zdt"
+  printf '  diclz4:   min %8s B %7s ms | default    same\n' "$l1s" "$l1t"
+done
+
+echo
+echo "=== image payload: pure incompressible data (no JSON, no dict), min levels ==="
+f=$T/img-blob
+isz=$(wc -c < $f)
+f1t=$(minof 200 $f $BD/dicflate -r -l 1); f1s=$($BD/dicflate -r -l 1 < $f 2>/dev/null | wc -c)
+z1t=$(minof 200 $f $BD/dicstd -r -l 1);   z1s=$($BD/dicstd -r -l 1 < $f 2>/dev/null | wc -c)
+l1t=$(minof 200 $f $BD/diclz4 -r -l 0);   l1s=$($BD/diclz4 -r -l 0 < $f 2>/dev/null | wc -c)
+printf 'input %s bytes\n' "$isz"
+printf '  dicflate -l1: %8s B %7s ms (%s MB/s)\n' "$f1s" "$f1t" "$(awk -v t=$f1t -v s=$isz 'BEGIN{printf "%.0f", s/1048576/(t/1000)}')"
+printf '  dicstd   -l1: %8s B %7s ms (%s MB/s)\n' "$z1s" "$z1t" "$(awk -v t=$z1t -v s=$isz 'BEGIN{printf "%.0f", s/1048576/(t/1000)}')"
+printf '  diclz4   -l0: %8s B %7s ms (%s MB/s)\n' "$l1s" "$l1t" "$(awk -v t=$l1t -v s=$isz 'BEGIN{printf "%.0f", s/1048576/(t/1000)}')"
